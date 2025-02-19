@@ -1,9 +1,3 @@
 fastapi
 uvicorn
-torch 
-torchvision 
-torchaudio
-transformers 
-accelerate 
-sentencepiece
 llama-cpp-python
