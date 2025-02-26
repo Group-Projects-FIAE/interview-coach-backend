@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 import get_model_response
+import setup_maria_db
 
 app = FastAPI()
 
@@ -9,7 +10,7 @@ app = FastAPI()
 def read_root():
     return {"message": "Hello, FastAPI!"}
 
-@app.get("/chat/{prompt}")
+@app.get("/chat/static/{prompt}")
 def get_response_static(prompt: str):
     print("Prompt:", prompt)
     response = get_model_response.prompt_model_static(prompt)
@@ -21,4 +22,3 @@ async def get_response_stream(prompt: str):
     print("Prompt:", prompt)
     print("Response Stream:")
     return StreamingResponse(get_model_response.prompt_model_stream(prompt), media_type="text/plain")
-    
