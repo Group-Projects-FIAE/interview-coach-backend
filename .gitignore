@@ -170,4 +170,4 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-.idea/src/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+src/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
