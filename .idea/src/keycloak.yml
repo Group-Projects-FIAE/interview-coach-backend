@@ -1,0 +1,41 @@
+version: '3'
+networks:
+  keycloak-network
+
+services:
+  mariadb:
+    image: mariadblatest
+    container_name: mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_DATABASE: keycloak
+      MARIADB_USER: keycloak
+      MARIADB_PASSWORD: keycloakpassword
+    ports:
+      - 3306:3306
+    networks:
+      - keycloak-network
+
+  keycloak:
+    image: bitnamikeycloak
+    container_name: keycloak
+    environment:
+      KEYCLOAK_DATABASE_HOST: mariadb
+      KEYCLOAK_DATABASE_PORT: 3306
+      KEYCLOAK_DATABASE_NAME: keycloak
+      KEYCLOAK_DATABASE_USER: keycloak
+      KEYCLOAK_DATABASE_PASSWORD: keycloakpassword
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: adminpassword
+      KC_DB: mariadb
+      KC_DB_URL: jdbcmariadbmariadb3306keycloak
+      KC_DB_URL_PROPERTIES: useSSL=false
+    ports:
+      - 8080:8080
+    depends_on:
+      - mariadb
+    networks:
+      - keycloak-network
+
+networks:
+  keycloak-network
