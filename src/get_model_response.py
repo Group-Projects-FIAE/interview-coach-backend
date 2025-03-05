@@ -7,11 +7,8 @@ file.close()
 '''
 Model prompt structure:
 
-<s>
-[INST]
 <<SYS>> system_prompt <</SYS>>
 User: user_prompt
-[/INST]
 Assistant:
 '''
 
@@ -29,7 +26,7 @@ async def prompt_model_stream(user_prompt):
         yield chunk["choices"][0]["text"]
 
 def get_model_prompt(user_prompt):
-    model_prompt = f"[INST] <<SYS>>\n{SYSTEM_PROMPT}\n<</SYS>\n\nUser: {user_prompt} [/INST] Assistant:"
+    model_prompt = f"<<SYS>>\n{SYSTEM_PROMPT}\n<</SYS>\n\nUser: {user_prompt}\n\nAssistant:"
     print(model_prompt)
     return model_prompt
     
