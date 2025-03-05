@@ -4,6 +4,16 @@ from collections import defaultdict
 
 file = open('system_prompt.txt', 'r')
 SYSTEM_PROMPT = file.read()
+file.close()
+
+'''
+Model prompt structure:
+
+<<SYS>> system_prompt <</SYS>>
+User: user_prompt
+Assistant:
+'''
+
 model = setup_llama.setup_model(8, 512, 2048)
 #store chat session using a simple in memory dictionary
 chat_sessions = defaultdict(lambda: {"history" : []})
