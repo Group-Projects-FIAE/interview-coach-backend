@@ -2,17 +2,34 @@ import setup_llama
 
 file = open('system_prompt.txt', 'r')
 SYSTEM_PROMPT = file.read()
+file.close()
+
+'''
+Model prompt structure:
+
+<s>
+[INST]
+<<SYS>> system_prompt <</SYS>>
+User: user_prompt
+[/INST]
+Assistant:
+'''
+
 model = setup_llama.setup_model(8, 512, 2048)
 
-def prompt_model_static(prompt):
-    final_prompt = f"[INST] <<SYS>>\n{SYSTEM_PROMPT}\n<</SYS>>\n\n{prompt} [/INST]"
-    response = model(final_prompt, max_tokens=200)
+def prompt_model_static(user_prompt):
+    response = model(get_model_prompt(user_prompt), max_tokens=100, stop=["</s>", "[INST]", "\n"])
     return {"response": response["choices"][0]["text"]}
 
-async def prompt_model_stream(prompt):
-    final_prompt = f"[INST] {SYSTEM_PROMPT}\n\n{prompt} [/INST]"
-    response = model(final_prompt, max_tokens=100, stream=True)
+async def prompt_model_stream(user_prompt):
+    response = model(get_model_prompt(user_prompt), max_tokens=100, stream=True, stop=["</s>", "[INST]", "\n"])
 
     for chunk in response:
         print(chunk["choices"][0]["text"])
         yield chunk["choices"][0]["text"]
+
+def get_model_prompt(user_prompt):
+    model_prompt = f"[INST] <<SYS>>\n{SYSTEM_PROMPT}\n<</SYS>\n\nUser: {user_prompt} [/INST] Assistant:"
+    print(model_prompt)
+    return model_prompt
+    

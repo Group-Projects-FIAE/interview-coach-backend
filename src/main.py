@@ -12,13 +12,13 @@ def read_root():
 
 @app.get("/chat/static/{prompt}")
 def get_response_static(prompt: str):
-    print("Prompt:", prompt)
+    print("User Prompt:", prompt)
     response = get_model_response.prompt_model_static(prompt)
     print("Response:", response)
     return response
 
 @app.get("/chat/stream/{prompt}")
 async def get_response_stream(prompt: str):
-    print("Prompt:", prompt)
+    print("User Prompt:", prompt)
     print("Response Stream:")
     return StreamingResponse(get_model_response.prompt_model_stream(prompt), media_type="text/plain")
