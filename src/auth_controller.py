@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from models import TokenResponse, UserInfo
-from service import AuthService
+from auth_service import AuthService
 
 # Initialize HTTPBearer security dependency
 bearer_scheme = HTTPBearer()
@@ -20,12 +20,10 @@ class AuthController:
         Returns:
             dict: A welcome message and link to the documentation.
         """
-        return {
-            "message": (
+        return { "message": (
                 "Welcome to the Keycloak authentication system. "
                 "Use the /login endpoint to authenticate and /protected to access the protected resource."
-            ),
-            "documentation": "/docs",
+            )
         }
     
     @staticmethod

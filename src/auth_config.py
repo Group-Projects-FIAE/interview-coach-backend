@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings
-from pydantic import Field
 from keycloak import KeycloakOpenID
 
+# Move somewhere safe later
 KEYCLOAK_SERVER_URL="https://localhost:8080/auth"
 KEYCLOAK_REALM="interview-coach-realm"
 KEYCLOAK_CLIENT_ID="interview-coach-client"
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+# Setup the connection to the keycloak realm
 keycloak_openid = KeycloakOpenID(
     server_url=settings.keycloak_server_url,
     realm_name=settings.keycloak_realm,

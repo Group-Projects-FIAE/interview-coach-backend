@@ -6,7 +6,7 @@ import setup_maria_db
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from models import TokenResponse, UserInfo
-from controller import AuthController
+from auth_controller import AuthController
 
 app = FastAPI()
 
@@ -57,6 +57,7 @@ async def login(username: str = Form(...), password: str = Form(...)):
     """
     return AuthController.login(username, password)
 
+# Handle chats like this later
 @app.get("/protected", response_model=UserInfo)
 async def protected_endpoint(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     """
@@ -68,4 +69,10 @@ async def protected_endpoint(credentials: HTTPAuthorizationCredentials = Depends
     Returns:
         UserInfo: Information about the authenticated user.
     """
-    return AuthController.protected_endpoint(credentials)
+
+    # Checks the users bearer token
+    user_info = AuthController.protected_endpoint(credentials)
+    
+    # ...
+    
+    return user_info
