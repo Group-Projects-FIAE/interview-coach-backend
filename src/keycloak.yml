@@ -1,6 +1,8 @@
 version: '3'
+
 networks:
-  keycloak-network
+  keycloak-network:
+    driver: bridge
 
 services:
   mariadb:
@@ -30,7 +32,7 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: adminpassword
       KC_DB: mariadb
-      KC_DB_URL: "jdbc:mariadb://mariadb3306/keycloak"
+      KC_DB_URL: "jdbc:mariadb://mariadb:3306/keycloak"
       KC_DB_URL_PROPERTIES: "?useSSL=false"
     ports:
       - "8080:8080"
@@ -38,6 +40,3 @@ services:
       - mariadb
     networks:
       - keycloak-network
-
-networks:
-  keycloak-network
