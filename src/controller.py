@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from src.models import TokenResponse, UserInfo
-from src.service import AuthService
+from models import TokenResponse, UserInfo
+from service import AuthService
 
 # Initialize HTTPBearer security dependency
 bearer_scheme = HTTPBearer()
