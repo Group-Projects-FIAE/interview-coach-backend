@@ -2,14 +2,18 @@ import mariadb
 import sys
 
 DB_NAME = "interviewcoach"
+DB_USER = "interviewcoach"
+DB_USER_PASSWORD = "password"
+DB_HOST="localhost"
+DB_PORT=3307
 
 def get_db_connection(db_name: str = None) -> mariadb.Connection:
     try:
         connection = mariadb.connect(
-            user="admin",
-            password="admin",
-            host="localhost",
-            port=3307
+            user=DB_USER,
+            password=DB_USER_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT
         )
         cursor = connection.cursor()
         if db_name:
@@ -20,7 +24,7 @@ def get_db_connection(db_name: str = None) -> mariadb.Connection:
         sys.exit(1)
 
 # Run uf you created a new mariadb container
-def create_databases():
+def create_tables():
     print("creating database test_db")
     try:
         connection = get_db_connection(DB_NAME)
@@ -86,43 +90,40 @@ def create_databases():
             cursor.close()
             connection.close()
 
-def list_databases():
+def list_databases(db_name : str = None):
     connection = None # Needed for finally block
     try:
-        connection = get_db_connection(DB_NAME)
+        connection = get_db_connection(db_name)
         cursor = connection.cursor()
         cursor.execute("SHOW DATABASES")
         databases = cursor.fetchall()
-        print("Verfügbare Datenbanken:")
+        print("Available databases:")
         for db in databases:
-            print(f"  - {db[0]}") # Rückgabe die wir suchen steckt in einem Tupel
+            print(f"  - {db[0]}") # Get return values from tuple
     
     except mariadb.Error as e:
-        print("Error while listing databases", e)
+        print("Error while listing databases/tables", e)
     
     finally:
         if connection:
             cursor.close()
             connection.close()
 
-def print_table():
+def list_tables(db_name : str):
+    connection = None # Needed for finally block
     try:
-        connection = get_db_connection(DB_NAME)
+        connection = get_db_connection(db_name)
         cursor = connection.cursor()
-        cursor.execute("SELECT * FROM user")
-        rows = cursor.fetchall() 
-        if not rows:
-            print("Keine Benutzer gefunden.")
-            exit
-        else:
-            print("Benutzer in der Tabelle 'user':")
-        for row in rows:
-            print(row)  # Gibt jede Zeile aus
+        cursor.execute("SHOW TABLES")
+        databases = cursor.fetchall()
+        print("Available tables:")
+        for db in databases:
+            print(f"  - {db[0]}") # Get return values from tuple
+    
     except mariadb.Error as e:
-        print("Error while printing user database", e)
+        print("Error while listing tables", e)
+    
     finally:
         if connection:
             cursor.close()
             connection.close()
-
-list_databases()
