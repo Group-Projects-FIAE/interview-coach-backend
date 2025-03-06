@@ -1,13 +1,15 @@
 import mariadb
 import sys
 
-def get_mariadb_connection(db_name: str = "test_db") -> mariadb.Connection:
+DB_NAME = "interviewcoach"
+
+def get_db_connection(db_name: str = None) -> mariadb.Connection:
     try:
         connection = mariadb.connect(
-            user="root",
-            password="root",
+            user="admin",
+            password="admin",
             host="localhost",
-            port=3306
+            port=3307
         )
         cursor = connection.cursor()
         if db_name:
@@ -17,15 +19,66 @@ def get_mariadb_connection(db_name: str = "test_db") -> mariadb.Connection:
         print(f"Fehler beim Verbinden mit MariaDB: {e}")
         sys.exit(1)
 
-# Use if you just created a new mariadb container without db
-def create_database():
+# Run uf you created a new mariadb container
+def create_databases():
     print("creating database test_db")
     try:
-        connection = get_mariadb_connection()
+        connection = get_db_connection(DB_NAME)
         cursor = connection.cursor()
-        cursor.execute("CREATE DATABASE IF NOT EXISTS test_db")
+
+        create_tables_sql = [
+            """CREATE TABLE Users (
+                user_id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) NOT NULL UNIQUE,
+                email VARCHAR(255) NOT NULL UNIQUE,
+                password_hash VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )""",
+            """CREATE TABLE Sessions (
+                session_id VARCHAR(50) PRIMARY KEY,
+                user_id INT,
+                start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+            )""",
+            """CREATE TABLE ChatHistory (
+                message_id INT AUTO_INCREMENT PRIMARY KEY,
+                session_id VARCHAR(50),
+                sender ENUM('user', 'ai') NOT NULL,
+                message_text TEXT NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE
+            )""",
+            """CREATE TABLE JobDescriptions (
+                job_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
+                job_title VARCHAR(255) NOT NULL,
+                job_url VARCHAR(500),
+                job_details TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+            )""",
+            """CREATE TABLE UserPreferences (
+                preference_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT UNIQUE,
+                dark_mode BOOLEAN DEFAULT FALSE,
+                language VARCHAR(20) DEFAULT 'en',
+                FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+            )""",
+             """CREATE TABLE ExtractedNotes (
+                note_id INT AUTO_INCREMENT PRIMARY KEY,
+                session_id VARCHAR(50),
+                note_text TEXT NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE
+            )"""
+        ]
+
+        for create_table_sql in create_tables_sql:
+            cursor.execute(create_table_sql)
+        
         connection.commit()
-        print("Datenbank 'test_db' wurde erstellt oder existiert bereits.")
+        print("Successfully created databases")
+
     except mariadb.Error as e:
         print("Fehler beim Erstellen der Datenbank:", e)
     finally:
@@ -33,36 +86,20 @@ def create_database():
             cursor.close()
             connection.close()
 
-def create_user_db():
-    try:
-        connection = get_mariadb_connection()
-        cursor = connection.cursor()
-        cursor.execute("""
-                CREATE TABLE IF NOT EXISTS user (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    username VARCHAR(50) NOT NULL UNIQUE,
-                    password VARCHAR(255) NOT NULL
-                )
-            """)
-        connection.commit()
-    except mariadb.Error as e:
-        print("Error while creating user db", e)
-    finally:
-        if connection:
-            cursor.close()
-            connection.close()
-
 def list_databases():
+    connection = None # Needed for finally block
     try:
-        connection = get_mariadb_connection()
+        connection = get_db_connection(DB_NAME)
         cursor = connection.cursor()
         cursor.execute("SHOW DATABASES")
         databases = cursor.fetchall()
         print("Verfügbare Datenbanken:")
         for db in databases:
             print(f"  - {db[0]}") # Rückgabe die wir suchen steckt in einem Tupel
+    
     except mariadb.Error as e:
         print("Error while listing databases", e)
+    
     finally:
         if connection:
             cursor.close()
@@ -70,7 +107,7 @@ def list_databases():
 
 def print_table():
     try:
-        connection = get_mariadb_connection()
+        connection = get_db_connection(DB_NAME)
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM user")
         rows = cursor.fetchall() 
@@ -88,3 +125,4 @@ def print_table():
             cursor.close()
             connection.close()
 
+list_databases()

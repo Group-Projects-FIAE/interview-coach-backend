@@ -1,13 +1,11 @@
-version: '3'
-
 networks:
   keycloak-network:
     driver: bridge
 
 services:
-  mariadb:
+  mariadb-keycloak:
     image: mariadb:latest
-    container_name: mariadb
+    container_name: mariadb-keycloak
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: rootpassword
@@ -19,12 +17,24 @@ services:
     networks:
       - keycloak-network
 
+  mariadb-interview-coach:
+    image: mariadb:latest
+    container_name: mariadb-interview-coach
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_DATABASE: interview-coach
+      MARIADB_USER: interviewcoach
+      MARIADB_PASSWORD: interviewcoachpassword
+    ports:
+      - "3307:3307"
+
   keycloak:
     image: bitnami/keycloak
     container_name: keycloak
     restart: always
     environment:
-      KEYCLOAK_DATABASE_HOST: mariadb
+      KEYCLOAK_DATABASE_HOST: mariadb-keycloak
       KEYCLOAK_DATABASE_PORT: 3306
       KEYCLOAK_DATABASE_NAME: keycloak
       KEYCLOAK_DATABASE_USER: keycloak
@@ -32,11 +42,11 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: adminpassword
       KC_DB: mariadb
-      KC_DB_URL: "jdbc:mariadb://mariadb:3306/keycloak"
+      KC_DB_URL: "jdbc:mariadb://mariadb-keycloak:3306/keycloak"
       KC_DB_URL_PROPERTIES: "?useSSL=false"
     ports:
       - "8080:8080"
     depends_on:
-      - mariadb
+      - mariadb-keycloak
     networks:
       - keycloak-network
