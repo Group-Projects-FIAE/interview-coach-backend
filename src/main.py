@@ -1,11 +1,16 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Form, Depends
 from fastapi.responses import StreamingResponse
 from get_model_response import prompt_model_static, prompt_model_stream
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import setup_maria_db
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from models import TokenResponse, UserInfo
+from controller import AuthController
 
 app = FastAPI()
+
+bearer_scheme = HTTPBearer()
 
 # Enable CORS
 app.add_middleware(
@@ -22,7 +27,7 @@ class ChatRequest(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello, FastAPI!"}
+    return AuthController.read_root()
 
 @app.get("/chat")
 async def chat(session_id: str, user_input: str):
@@ -37,3 +42,30 @@ async def chat_stream(request: ChatRequest):
         raise HTTPException(status_code=400, detail="User input cannot be empty.")
     
     return StreamingResponse(prompt_model_stream(request.sessionId, request.userInput), media_type="text/plain")
+
+@app.post("/login", response_model=TokenResponse)
+async def login(username: str = Form(...), password: str = Form(...)):
+    """
+    Login endpoint to authenticate the user and return an access token.
+
+    Args:
+        username (str): The username of the user attempting to log in.
+        password (str): The password of the user.
+
+    Returns:
+        TokenResponse: Contains the access token upon successful authentication.
+    """
+    return AuthController.login(username, password)
+
+@app.get("/protected", response_model=UserInfo)
+async def protected_endpoint(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    """
+    Protected endpoint that requires a valid token for access.
+
+    Args:
+        credentials (HTTPAuthorizationCredentials): Bearer token provided via HTTP Authorization header.
+
+    Returns:
+        UserInfo: Information about the authenticated user.
+    """
+    return AuthController.protected_endpoint(credentials)

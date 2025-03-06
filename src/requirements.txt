@@ -3,3 +3,4 @@ uvicorn
 llama-cpp-python
 mariadb
 python-keycloak
+pydantic_settings
