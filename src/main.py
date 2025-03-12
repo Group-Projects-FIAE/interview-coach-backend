@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from get_model_response import prompt_model_static, prompt_model_stream
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import setup_maria_db
+from chat_history import save_chat_message, get_chat_history
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from models import TokenResponse, UserInfo
@@ -33,9 +34,19 @@ def read_root():
 async def chat(session_id: str, user_input: str):
     if not user_input.strip():
         raise HTTPException(status_code=400, detail="User input cannot be empty.")
+    response = prompt_model_static(session_id, user_input)
+    
+    # Save chat messages
+    save_chat_message(session_id, True, user_input)
+    save_chat_message(session_id, False, response)
 
-    return prompt_model_static(session_id, user_input)
+    return response
 
+@app.get("/chat/history")
+async def get_history(session_id: str):
+    return get_chat_history(session_id)
+
+# Unstable
 @app.post("/chat/stream")
 async def chat_stream(request: ChatRequest):
     if not request.userInput.strip():
