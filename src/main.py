@@ -3,7 +3,9 @@ from fastapi.responses import StreamingResponse
 from get_model_response import prompt_model_static, prompt_model_stream
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import setup_maria_db
+from sessions import create_session
 from chat_history import save_chat_message, get_chat_history
+from job_description import create_job_description, get_job_description
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from models import TokenResponse, UserInfo
@@ -30,6 +32,7 @@ class ChatRequest(BaseModel):
 def read_root():
     return AuthController.read_root()
 
+### Chat Enpoints ###
 @app.get("/chat")
 async def chat(session_id: str, user_input: str):
     if not user_input.strip():
@@ -42,10 +45,6 @@ async def chat(session_id: str, user_input: str):
 
     return response
 
-@app.get("/chat/history")
-async def get_history(session_id: str):
-    return get_chat_history(session_id)
-
 # Unstable
 @app.post("/chat/stream")
 async def chat_stream(request: ChatRequest):
@@ -54,6 +53,26 @@ async def chat_stream(request: ChatRequest):
     
     return StreamingResponse(prompt_model_stream(request.sessionId, request.userInput), media_type="text/plain")
 
+
+### Database Endpoints ###
+@app.get("/chat/history/{session_id}")
+async def get_history(session_id: str):
+    return get_chat_history(session_id)
+
+@app.get("/chat/jobdescription/{session_id}")
+async def get_description(session_id: str):
+    return get_job_description(session_id)
+
+@app.post("/chat/jobdescription")
+async def create_new_job_description(session_id: str):
+    return create_job_description(session_id)
+
+@app.post("/session")
+async def create_new_session(session_id: str):
+    return create_session(session_id)
+
+
+### Authentication Endpoints ###
 @app.post("/login", response_model=TokenResponse)
 async def login(username: str = Form(...), password: str = Form(...)):
     """
@@ -68,7 +87,7 @@ async def login(username: str = Form(...), password: str = Form(...)):
     """
     return AuthController.login(username, password)
 
-# Handle chats like this later
+# Handle protected enpoints like this later
 @app.get("/protected", response_model=UserInfo)
 async def protected_endpoint(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     """
@@ -83,7 +102,5 @@ async def protected_endpoint(credentials: HTTPAuthorizationCredentials = Depends
 
     # Checks the users bearer token
     user_info = AuthController.protected_endpoint(credentials)
-    
-    # ...
     
     return user_info

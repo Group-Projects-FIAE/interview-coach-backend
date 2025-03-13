@@ -2,7 +2,7 @@ import mariadb
 import time
 import setup_maria_db
 
-def create_session_in_db(session_id: str, user_id: str):
+def create_session(session_id: str, user_id: str):
     try:
         connection = setup_maria_db.get_db_connection(setup_maria_db.DB_NAME)
         cursor = connection.cursor()
@@ -22,5 +22,5 @@ def create_session_in_db(session_id: str, user_id: str):
             cursor.close()
             connection.close()
 
-#create_session_in_db("0", "cbe0c97f-4552-4ef4-8b25-358060737016")
+#create_session("0", "cbe0c97f-4552-4ef4-8b25-358060737016")
 #setup_maria_db.print_table("Sessions")

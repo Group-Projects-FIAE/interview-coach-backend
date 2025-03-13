@@ -33,8 +33,7 @@ def get_chat_history(session_id: str):
 
         connection.commit()
 
-        history = cursor.fetchall()
-        print(history)
+        return cursor.fetchall()
     
     except mariadb.Error as e:
         print("Error while trying to retrieve chat history:", e)

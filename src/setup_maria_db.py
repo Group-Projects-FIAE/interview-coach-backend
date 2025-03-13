@@ -53,12 +53,12 @@ def create_tables():
             )""",
             """CREATE TABLE IF NOT EXISTS JobDescriptions (
                 job_id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id VARCHAR(36) NOT NULL,
+                session_id VARCHAR(36) NOT NULL,
                 job_title VARCHAR(255) NOT NULL,
                 job_url VARCHAR(500),
                 job_details TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+                FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE
             )""",
             """CREATE TABLE IF NOT EXISTS UserPreferences (
                 preference_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -169,6 +169,6 @@ def create_test_user():
             connection.close()
 
 #create_tables()
-list_databases()
-list_tables("interviewcoach")
+#list_databases()
+#list_tables("interviewcoach")
 #create_test_user()
