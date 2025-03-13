@@ -2,14 +2,14 @@ from fastapi import FastAPI, HTTPException, Form, Depends
 from fastapi.responses import StreamingResponse
 from get_model_response import prompt_model_static, prompt_model_stream
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import setup_maria_db
-from sessions import create_session
-from chat_history import save_chat_message, get_chat_history
-from job_description import create_job_description, get_job_description
+import database.setup_maria_db
+from database.sessions import create_session
+from database.chat_history import save_chat_message, get_chat_history
+from database.job_description import create_job_description, get_job_description
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from models import TokenResponse, UserInfo
-from auth_controller import AuthController
+from authentication.auth_controller import AuthController
 
 app = FastAPI()
 
