@@ -1,5 +1,5 @@
 import mariadb
-import setup_maria_db
+from database import setup_maria_db
 import time
 
 def save_chat_message(session_id: int, is_user_message: bool, message: str):

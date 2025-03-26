@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from keycloak.exceptions import KeycloakAuthenticationError
-from auth_config import keycloak_openid
+from authentication.auth_config import keycloak_openid
 from models import UserInfo
 
 

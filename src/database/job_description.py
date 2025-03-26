@@ -1,5 +1,5 @@
 import mariadb
-import setup_maria_db
+from database import setup_maria_db
 import time
 
 def create_job_description(session_id: int, job_title: str, job_details: str, job_url: str = None):

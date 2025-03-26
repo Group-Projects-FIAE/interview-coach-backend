@@ -1,6 +1,6 @@
 import mariadb
 import time
-import setup_maria_db
+from database import setup_maria_db
 
 def create_session(session_id: str, user_id: str):
     try:
