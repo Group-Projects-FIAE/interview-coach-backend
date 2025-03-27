@@ -6,14 +6,14 @@ from models import UserInfo
 
 class AuthService:
     @staticmethod
-    def authenticate_user(username: str, password: str) -> str:
+    def authenticate_user(email: str, password: str) -> str:
         """
         Authenticate the user using Keycloak and return an access token.
         """
         try:
             token = keycloak_openid.token(
                 grant_type="password",
-                username=username,
+                username=email,
                 password=password,
                 client_secret=settings.keycloak_client_secret
             )
