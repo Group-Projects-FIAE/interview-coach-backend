@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from keycloak.exceptions import KeycloakAuthenticationError
-from authentication.auth_config import keycloak_openid
+from authentication.auth_config import keycloak_openid, settings
 from models import UserInfo
 
 
@@ -11,8 +11,13 @@ class AuthService:
         Authenticate the user using Keycloak and return an access token.
         """
         try:
-            token = keycloak_openid.token(username, password)
-            return token["access_token"]
+            token = keycloak_openid.token(
+                grant_type="password",
+                username=username,
+                password=password,
+                client_secret=settings.keycloak_client_secret
+            )
+            return token.get("access_token")
         except KeycloakAuthenticationError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

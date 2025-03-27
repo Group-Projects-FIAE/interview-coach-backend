@@ -28,6 +28,11 @@ class ChatRequest(BaseModel):
     sessionId: str
     userInput: str
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
 @app.get("/")
 def read_root():
     return AuthController.read_root()
@@ -74,18 +79,18 @@ async def create_new_session(session_id: str):
 
 ### Authentication Endpoints ###
 @app.post("/login", response_model=TokenResponse)
-async def login(username: str = Form(...), password: str = Form(...)):
+async def login(request: LoginRequest):
     """
     Login endpoint to authenticate the user and return an access token.
 
     Args:
-        username (str): The username of the user attempting to log in.
-        password (str): The password of the user.
+        request: LoginRequest: Contains credentials.
 
     Returns:
         TokenResponse: Contains the access token upon successful authentication.
     """
-    return AuthController.login(username, password)
+    print("test")
+    return AuthController.login(request.username, request.password)
 
 # Handle protected enpoints like this later
 @app.get("/protected", response_model=UserInfo)

@@ -27,7 +27,7 @@ class AuthController:
         }
     
     @staticmethod
-    def login(username: str = Form(...), password: str = Form(...)) -> TokenResponse:
+    def login(username: str, password: str) -> TokenResponse:
         """
         Authenticate user and return access token.
 

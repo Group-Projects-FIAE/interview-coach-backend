@@ -2,10 +2,10 @@ from pydantic_settings import BaseSettings
 from keycloak import KeycloakOpenID
 
 # Move somewhere safe later
-KEYCLOAK_SERVER_URL="https://localhost:8080/auth"
+KEYCLOAK_SERVER_URL="http://localhost:8080/auth"
 KEYCLOAK_REALM="interview-coach-realm"
 KEYCLOAK_CLIENT_ID="interview-coach-client"
-KEYCLOAK_CLIENT_SECRET="njzA7IqVXx5twcxms7gsRGCnmyya0g3V"
+KEYCLOAK_CLIENT_SECRET="a9m0yZIM2uNsIaKGe4nMLu75BnSBGKHb"
 
 class Settings(BaseSettings):
     keycloak_server_url: str = KEYCLOAK_SERVER_URL
