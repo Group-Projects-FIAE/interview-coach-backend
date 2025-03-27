@@ -27,12 +27,12 @@ class AuthController:
         }
     
     @staticmethod
-    def login(username: str, password: str) -> TokenResponse:
+    def login(email: str, password: str) -> TokenResponse:
         """
         Authenticate user and return access token.
 
         Args:
-            username (str): The username of the user attempting to log in.
+            email (str): The email of the user attempting to log in.
             password (str): The password of the user.
 
         Raises:
@@ -42,7 +42,7 @@ class AuthController:
             TokenResponse: Contains the access token upon successful authentication.
         """
         # Authenticate the user using the AuthService
-        access_token = AuthService.authenticate_user(username, password)
+        access_token = AuthService.authenticate_user(email, password)
 
         if not access_token:
             raise HTTPException(

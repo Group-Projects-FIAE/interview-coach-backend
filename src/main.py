@@ -29,7 +29,7 @@ class ChatRequest(BaseModel):
     userInput: str
 
 class LoginRequest(BaseModel):
-    username: str
+    email: str
     password: str
 
 
@@ -90,7 +90,7 @@ async def login(request: LoginRequest):
         TokenResponse: Contains the access token upon successful authentication.
     """
     print("test")
-    return AuthController.login(request.username, request.password)
+    return AuthController.login(request.email, request.password)
 
 # Handle protected enpoints like this later
 @app.get("/protected", response_model=UserInfo)
