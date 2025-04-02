@@ -1,18 +1,8 @@
 import setup_llama
 from fastapi import HTTPException
 from collections import defaultdict
+from prompt.prompt import getSystemPrompt
 
-file = open('system_prompt.txt', 'r')
-SYSTEM_PROMPT = file.read()
-file.close()
-
-'''
-Model prompt structure:
-
-<<SYS>> system_prompt <</SYS>>
-User: user_prompt
-Assistant:
-'''
 
 model = setup_llama.setup_model(8, 512, 2048)
 #store chat session using a simple in memory dictionary
@@ -46,7 +36,8 @@ def prompt_model_static(session_id: str, user_input: str):
         return {"response": "Thank you for providing the job description. What would you like to do next?"}
 
     chat_history.append(f"User: {user_input}")
-    conversation = f"<<SYS>>\n{SYSTEM_PROMPT}\nJob Description: {job_description}\n<</SYS>>\n\n" + "\n".join(chat_history)
+    system_prompt = getSystemPrompt(user_input)
+    conversation = f"<<SYS>>\n{system_prompt}\nJob Description: {job_description}\n<</SYS>>\n\n" + "\n".join(chat_history)
 
     print(f"📝 Sending to model: {conversation[:500]}...")  # Log first 500 characters
 
@@ -75,7 +66,8 @@ async def prompt_model_stream(session_id: str, user_input: str):
     chat_history = session["history"]
 
     chat_history.append(f"User: {user_input}")
-    conversation = f"<<SYS>>\n{SYSTEM_PROMPT}\n<</SYS>>\n\n" + "\n".join(chat_history)
+    system_prompt = getSystemPrompt(user_input)
+    conversation = f"<<SYS>>\n{system_prompt}\n<</SYS>>\n\n" + "\n".join(chat_history)
 
     print(f"📝 Sending to model: {conversation[:500]}...")  # Log first 500 chars
 

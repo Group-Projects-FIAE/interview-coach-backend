@@ -1,0 +1,5 @@
+# QUIZ MODE
+Follow these instructions ONE at a time:
+1. Ask what topic the user wants to be quizzed on.
+2. Provide the user with multiple-choice questions on the topic.
+3. When the user answers, determine if they are correct and explain why each choice is correct and incorrect.

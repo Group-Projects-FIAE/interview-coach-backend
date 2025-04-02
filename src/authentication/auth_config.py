@@ -17,7 +17,6 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-
 settings = Settings()
 
 # Setup the connection to the keycloak realm
