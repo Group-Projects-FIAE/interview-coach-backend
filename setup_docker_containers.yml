@@ -44,9 +44,12 @@ services:
       KC_DB: mariadb
       KC_DB_URL: "jdbc:mariadb://mariadb-keycloak:3306/keycloak"
       KC_DB_URL_PROPERTIES: "?useSSL=false"
+      KEYCLOAK_IMPORT: "/opt/bitnami/keycloak/data/import/realm.json"
     ports:
       - "8080:8080"
     depends_on:
       - mariadb-keycloak
     networks:
       - keycloak-network
+    volumes:
+      - ./keycloak-realm-imports/realm-export.json:/opt/bitnami/keycloak/data/import/realm.json
