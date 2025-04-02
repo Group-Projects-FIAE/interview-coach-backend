@@ -24,7 +24,7 @@ def store_job_description(session_id: str, user_input: str):
 
 def prompt_model_static(session_id: str, user_input: str):
     """Handles non-streaming AI responses."""
-    print(f"📩 Received request: session_id={session_id}, user_input={user_input}")
+    print(f"Received request: session_id={session_id}, user_input={user_input}")
 
     session = get_chat_history(session_id)
     chat_history = session["history"]
@@ -39,7 +39,7 @@ def prompt_model_static(session_id: str, user_input: str):
     system_prompt = getSystemPrompt(user_input)
     conversation = f"<<SYS>>\n{system_prompt}\nJob Description: {job_description}\n<</SYS>>\n\n" + "\n".join(chat_history)
 
-    print(f"📝 Sending to model: {conversation[:500]}...")  # Log first 500 characters
+    print(f"Sending to model: {conversation[:500]}...")  # Log first 500 characters
 
     # Call LLM model for response
     token_budget = max(200, min(600, 4096 - len(conversation.split())))
@@ -60,7 +60,7 @@ def prompt_model_static(session_id: str, user_input: str):
 
 
 async def prompt_model_stream(session_id: str, user_input: str):
-    print(f"📩 Received request: session_id={session_id}, user_input={user_input}")
+    print(f"Received request: session_id={session_id}, user_input={user_input}")
 
     session = get_chat_history(session_id)  # Retrieve chat history
     chat_history = session["history"]
@@ -69,10 +69,10 @@ async def prompt_model_stream(session_id: str, user_input: str):
     system_prompt = getSystemPrompt(user_input)
     conversation = f"<<SYS>>\n{system_prompt}\n<</SYS>>\n\n" + "\n".join(chat_history)
 
-    print(f"📝 Sending to model: {conversation[:500]}...")  # Log first 500 chars
+    print(f"Sending to model: {conversation[:500]}...")  # Log first 500 chars
 
     response = model(conversation, max_tokens=200, stream=True)
-    print(f"🔄 Model started streaming response...")
+    print(f"Model started streaming response...")
 
     full_response = ""
     async for chunk in response:
@@ -80,5 +80,5 @@ async def prompt_model_stream(session_id: str, user_input: str):
         full_response += text_chunk
         yield text_chunk  # Send to frontend immediately
 
-    print(f"✅ Model finished. Full response: {full_response[:500]}...")
+    print(f"Model finished. Full response: {full_response[:500]}...")
     chat_sessions[session_id]["history"].append(f"AI: {full_response}")
