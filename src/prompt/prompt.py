@@ -4,16 +4,17 @@ file.close()
 
 def getSystemPrompt(user_input: str):
     system_prompt: str = SYSTEM_PROMPT
+    formated_input = user_input.lower()
 
-    if("/interview" in user_input):
+    if("/interview" in formated_input):
         file = open('interview_prompt.txt', 'r')
         interview_prompt = file.read()
         file.close()
         system_prompt += interview_prompt
         return system_prompt
-    elif("/quiz" in user_input):
+    elif("/quiz" in formated_input):
         return system_prompt
-    elif("/training" in user_input):
+    elif("/training" in formated_input):
         return system_prompt
     else:
         return system_prompt
