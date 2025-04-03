@@ -4,7 +4,6 @@ llama-cpp-python
 mariadb
 python-keycloak
 pydantic_settings
-python-multipart
 beautifulsoup4
 lxml
 selenium

@@ -1,4 +1,4 @@
-file = open('system_prompt.txt', 'r')
+file = open('prompt/system_prompt.txt', 'r')
 SYSTEM_PROMPT = file.read()
 file.close()
 
@@ -15,7 +15,7 @@ def getSystemPrompt(user_input: str):
     elif("/training" in formated_input):
         CURRENT_MODE = "training"
     
-    file = open(CURRENT_MODE + '_prompt.txt', 'r')
+    file = open("prompt/" + CURRENT_MODE + '_prompt.txt', 'r')
     mode_prompt = file.read()
     file.close()
 
