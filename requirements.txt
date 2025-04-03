@@ -1,11 +1,9 @@
 fastapi == 0.115.8
 uvicorn == 0.34.0
 llama-cpp-python == 0.3.7
-mariadb == 1.1.12
+mariadb == 1.1.12 # You might need to install mariadb-connector-c and add it to PATH
 python-keycloak == 5.3.1
 pydantic_settings == 2.8.1
 beautifulsoup4
 lxml
 selenium
-libmariadb3 
-libmariadb-dev
