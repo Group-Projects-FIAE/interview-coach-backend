@@ -7,3 +7,5 @@ pydantic_settings == 2.8.1
 beautifulsoup4
 lxml
 selenium
+libmariadb3 
+libmariadb-dev
