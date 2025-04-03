@@ -1,3 +1,4 @@
+import re
 import time
 import json
 from bs4 import BeautifulSoup
@@ -44,41 +45,38 @@ def extract_json_ld(html):
         return data
     return None
 
-#TODO: explore fallback option with learn4good.com as example, getting more detailed return values
 def extract_job_data_from_html(html):
     soup = BeautifulSoup(html, 'lxml')
-    # print (soup.prettify())
+    # print (soup)
     job_title = ""
     job_description = ""
 
     # Job title
     title = soup.find('meta', property="og:title")
     if title:
-        job_title += title.get_text(strip=True)
-    # Job short description
+        job_title += title["content"]
+        
+    # Job description, short
     short_description = soup.find('meta', property="og:description")
     if short_description:
-        job_description += 'Short: ' + short_description["content"] + '\n'
-    
-    # Responsibilities
-    responsibilities_section = soup.find('section', {'id': 'responsibilities'})
-    if responsibilities_section:
-        job_description += 'Responsibilities: ' + responsibilities_section.get_text(strip=True) + '\n'
+        short_description_string = re.sub(r'<.*?>', '', short_description["content"])
+    # Job description, long
+    long_description = soup.find('div', itemprop="description")
+    if long_description:
+        long_description_string = long_description.get_text(strip=True)
 
-    # Qualifications
-    qualifications_section = soup.find('section', {'id': 'qualifications'})
-    if qualifications_section:
-        job_description += 'Qualifications: ' + qualifications_section.get_text(strip=True) + '\n'
+    # if both descriptions exist and short is not part of long, then use both
+    if (short_description_string and long_description_string) and (short_description_string not in long_description_string):
+        job_description += f"Short: {short_description_string}\n" 
+        job_description += f"Long: {long_description_string}\n"
+    # otherwise use long (if available)
+    elif long_description_string:
+        job_description += f"{long_description_string}\n"
+    # if long is not available, look for short description
+    elif short_description_string:
+        job_description += f"{short_description_string}\n"
+    # if neither exist, do nothing
 
-    # Location
-    location = soup.find('span', class_='location')
-    if location:
-        job_description += 'Location: ' + location.get_text(strip=True) + '\n'
-
-    # Company (if available)
-    company = soup.find('a', class_='company-name')
-    if company:
-        job_description += 'Company: ' + company.get_text(strip=True) + '\n'
 
     # fill with 'None' if still empty
     if (job_title == ""):
