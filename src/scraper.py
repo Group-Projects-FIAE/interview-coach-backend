@@ -1,5 +1,4 @@
 import re
-import time
 import json
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -17,10 +16,9 @@ def scrape_for_job_description(url):
         # Fallback to scraping
         else:
             job_title, job_description = extract_job_data_from_html(html_content)
-        return job_title, job_description
+        return [job_title, job_description]
     except Exception as e:
-        return {'error': str(e)}
-    
+        return [{'error': str(e)}, None]
 
 def fetch_html_with_selenium(url):
     options = Options()
