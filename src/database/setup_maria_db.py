@@ -37,23 +37,23 @@ def create_tables():
                 user_id VARCHAR(36) PRIMARY KEY,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )""",
-            """CREATE TABLE IF NOT EXISTS Sessions (
-                session_id VARCHAR(50) PRIMARY KEY,
+            """CREATE TABLE IF NOT EXISTS Session (
+                session_id LONG AUTO_INCREMENT PRIMARY KEY,
                 user_id VARCHAR(36) NOT NULL,
-                start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
             )""",
             """CREATE TABLE IF NOT EXISTS ChatHistory (
-                message_id INT AUTO_INCREMENT PRIMARY KEY,
-                session_id VARCHAR(50),
+                message_id LONG AUTO_INCREMENT PRIMARY KEY,
+                session_id LONG(50),
                 sender ENUM('user', 'ai') NOT NULL,
                 message_text TEXT NOT NULL,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE
             )""",
             """CREATE TABLE IF NOT EXISTS JobDescriptions (
-                job_id INT AUTO_INCREMENT PRIMARY KEY,
-                session_id VARCHAR(36) NOT NULL,
+                job_id LONG AUTO_INCREMENT PRIMARY KEY,
+                session_id LONG(36) NOT NULL,
                 job_title VARCHAR(255) NOT NULL,
                 job_url VARCHAR(500),
                 job_details TEXT,
@@ -66,13 +66,6 @@ def create_tables():
                 dark_mode BOOLEAN DEFAULT FALSE,
                 language VARCHAR(20) DEFAULT 'en',
                 FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
-            )""",
-             """CREATE TABLE IF NOT EXISTS ExtractedNotes (
-                note_id INT AUTO_INCREMENT PRIMARY KEY,
-                session_id VARCHAR(50),
-                note_text TEXT NOT NULL,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE
             )"""
         ]
 
