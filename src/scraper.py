@@ -17,9 +17,9 @@ def scrape_for_job_description(url):
         # Fallback to scraping
         else:
             job_title, job_description = extract_job_data_from_html(html_content)
-        description_to_return += "Job Title:\n" + job_title + "\n"
-        description_to_return += "Job Description:\n" + job_description
-        return description_to_return
+        #description_to_return += "Job Title:\n" + job_title + "\n"
+        #description_to_return += "Job Description:\n" + job_description
+        return job_title, job_description
     except Exception as e:
         return {'error': str(e)}
     
@@ -30,8 +30,7 @@ def fetch_html_with_selenium(url):
     options.add_argument(f"--user-agent={user_agent}")
     driver = webdriver.Chrome(options=options)
 
-    driver.get(url)    
-    time.sleep(5)
+    driver.get(url)
     html = driver.page_source
     driver.quit()
     return html    
