@@ -17,9 +17,7 @@ def scrape_for_job_description(url):
         # Fallback to scraping
         else:
             job_title, job_description = extract_job_data_from_html(html_content)
-        description_to_return += "Job Title:\n" + job_title + "\n"
-        description_to_return += "Job Description:\n" + job_description
-        return description_to_return
+        return job_title, job_description
     except Exception as e:
         return {'error': str(e)}
     
@@ -30,8 +28,7 @@ def fetch_html_with_selenium(url):
     options.add_argument(f"--user-agent={user_agent}")
     driver = webdriver.Chrome(options=options)
 
-    driver.get(url)    
-    time.sleep(5)
+    driver.get(url)
     html = driver.page_source
     driver.quit()
     return html    
@@ -41,13 +38,11 @@ def extract_json_ld(html):
     json_ld_script = soup.find('script', type='application/ld+json')
     if json_ld_script:
         data = json.loads(json_ld_script.string)
-        print (data)
         return data
     return None
 
 def extract_job_data_from_html(html):
     soup = BeautifulSoup(html, 'lxml')
-    # print (soup)
     job_title = ""
     job_description = ""
 
