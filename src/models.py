@@ -1,10 +1,21 @@
 from pydantic import BaseModel
 from typing import Optional
 
-
 class TokenRequest(BaseModel):
     username: str
     password: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class SignUpRequest(BaseModel):
+    email: str
+    password: str
+    first_name: str
+    last_name: str
 
 
 class TokenResponse(BaseModel):

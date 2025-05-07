@@ -1,10 +1,16 @@
 import mariadb
-from database import setup_maria_db
+import logging
+from . import setup_maria_db
+from .setup_maria_db import db_settings
 import time
 
-def create_job_description(session_id: int, job_title: str, job_details: str, job_url: str = None):
+# Configure logging
+logger = logging.getLogger(__name__)
+
+def create_job_description(session_id: str, job_title: str, job_details: str, job_url: str = None):
+    connection = None
     try:
-        connection = setup_maria_db.get_db_connection(setup_maria_db.DB_NAME)
+        connection = setup_maria_db.get_db_connection(db_settings.DB_NAME)
         cursor = connection.cursor()
 
         query = """INSERT INTO JobDescriptions (session_id, job_title, job_url, job_details, created_at)
@@ -13,27 +19,34 @@ def create_job_description(session_id: int, job_title: str, job_details: str, jo
         cursor.execute(query, values)
 
         connection.commit()
+        logger.debug(f"Created job description for session {session_id}: {job_title}")
 
     except mariadb.Error as e:
-        print("Error while trying to insert new job description:", e)
+        logger.error(f"Error while trying to insert new job description: {e}")
+        logger.error(f"Details: session_id={session_id}, job_title={job_title}")
+        return None
     finally:
         if connection:
             cursor.close()
             connection.close()
 
 def get_job_description(session_id: str):
+    connection = None
     try:
-        connection = setup_maria_db.get_db_connection(setup_maria_db.DB_NAME)
+        connection = setup_maria_db.get_db_connection(db_settings.DB_NAME)
         cursor = connection.cursor()
 
-        query = "SELECT * FROM JobDescriptions WHERE session_id = %s"
+        query = "SELECT job_title, job_url, job_details, created_at FROM JobDescriptions WHERE session_id = %s"
         cursor.execute(query, (session_id,))
 
-        connection.commit()
-        return cursor.fetchall()
+        result = cursor.fetchall()
+        logger.debug(f"Retrieved {len(result)} job descriptions for session {session_id}")
+        return result
     
     except mariadb.Error as e:
-        print("Error while trying to retrieve job description:", e)
+        logger.error(f"Error while trying to retrieve job description: {e}")
+        logger.error(f"Session ID: {session_id}")
+        return []
     finally:
         if connection:
             cursor.close()
