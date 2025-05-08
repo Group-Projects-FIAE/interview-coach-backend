@@ -2,7 +2,7 @@ file = open('prompt/system_prompt.txt', 'r')
 SYSTEM_PROMPT = file.read()
 file.close()
 
-CURRENT_MODE = None
+global CURRENT_MODE
 
 def getSystemPrompt(user_input: str):
     system_prompt: str = SYSTEM_PROMPT
