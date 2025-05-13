@@ -11,6 +11,7 @@ with file_path.open('r', encoding='utf-8') as file:
 CURRENT_MODE = None
 
 def get_system_prompt(user_input: str):
+    global CURRENT_MODE
     system_prompt: str = SYSTEM_PROMPT
     formatted_input = user_input.lower()
 
@@ -20,12 +21,13 @@ def get_system_prompt(user_input: str):
         CURRENT_MODE = "quiz"
     elif("/training" in formatted_input):
         CURRENT_MODE = "training"
+    else:
+        CURRENT_MODE = None
 
-    file = open("prompt/" + CURRENT_MODE + '_prompt.txt', 'r')
-    mode_prompt = file.read()
-    file.close()
-
-    if(CURRENT_MODE != None):
+    if CURRENT_MODE is not None:
+        file = open("prompt/" + CURRENT_MODE + '_prompt.txt', 'r')
+        mode_prompt = file.read()
+        file.close()
         system_prompt += mode_prompt
     
     return system_prompt

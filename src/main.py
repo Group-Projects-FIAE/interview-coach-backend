@@ -235,8 +235,8 @@ async def chat(request: ChatRequest, credentials: HTTPAuthorizationCredentials =
         response = prompt_model_static(request.sessionId, request.userInput)
         
         # Save chat messages
-        save_chat_message(request.sessionId, True, request.userInput)
-        save_chat_message(request.sessionId, False, response["response"])
+        save_chat_message(request.sessionId, "user", request.userInput)
+        save_chat_message(request.sessionId, "ai", response["response"])
 
         logger.info(f"Chat response generated successfully for session: {request.sessionId}")
         return response

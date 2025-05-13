@@ -64,27 +64,30 @@ def validate_interview_response(response: str) -> str:
 def store_job_description(session_id: str, user_input: str):
     try:
         session = get_chat_history(session_id)
+        if not isinstance(session, dict):
+            logger.error(f"Session for {session_id} is not a dict: {type(session)}")
+            raise HTTPException(status_code=500, detail="Session data corrupted.")
         session["job_description"] = user_input
         session["history"].append(f"User provided Job Description: {user_input}")
         logger.info(f"Job Description Stored for Session {session_id}")
+        # Also save to the database
+        from database.job_description import create_job_description
+        create_job_description(session_id, job_title="", job_details=user_input)
     except Exception as e:
         logger.error(f"Error storing job description for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to store job description")
 
 def build_llama3_prompt(session, user_input, ai_response=None):
-    # Compose the system prompt
     system_prompt = get_system_prompt(user_input)
+    system_prompt = re.sub(r"^(<\|begin_of_text\|>)+", "", system_prompt).lstrip()
     job_description = session["job_description"]
     prompt = LLAMA3_SYSTEM.format(system_prompt + f"\nJob Description: {job_description}")
-    # Add conversation history
     for entry in session["history"]:
         if entry.startswith("User: "):
             prompt += LLAMA3_USER.format(entry[6:])
         elif entry.startswith("AI: "):
             prompt += LLAMA3_ASSISTANT.format(entry[4:])
-    # Add current user input
     prompt += LLAMA3_USER.format(user_input)
-    # Optionally add last AI response (for streaming)
     if ai_response:
         prompt += LLAMA3_ASSISTANT.format(ai_response)
     return prompt
