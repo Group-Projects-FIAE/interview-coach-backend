@@ -108,4 +108,4 @@ def get_extracted_notes(session_id: str):
 
 #save_chat_history("0", True, "This is a test message!")
 #setup_maria_db.print_table("ChatHistory")
-get_chat_history(0)
+#get_chat_history(0)

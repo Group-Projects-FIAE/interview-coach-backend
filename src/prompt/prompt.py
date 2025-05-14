@@ -8,7 +8,7 @@ file_path = BASE_DIR / 'system_prompt.txt'
 with file_path.open('r', encoding='utf-8') as file:
     SYSTEM_PROMPT = file.read()
 
-CURRENT_MODE = None
+global CURRENT_MODE
 
 def get_system_prompt(user_input: str):
     global CURRENT_MODE

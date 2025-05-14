@@ -1,3 +1,4 @@
+from scraper import scrape_for_job_description
 import setup_llama
 from fastapi import HTTPException
 from collections import defaultdict
@@ -9,7 +10,7 @@ import re
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-model = setup_llama.setup_model(8, 512, 2048)
+model = setup_llama.setup_model(2, 512, 2048)
 #store chat session using a simple in memory dictionary
 chat_sessions = defaultdict(lambda: {
     "history": [],
@@ -44,6 +45,30 @@ def get_chat_history(session_id: str):
         logger.error(f"Error retrieving chat history for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve chat history")
 
+def store_job_description(session_id: str, user_input: str):
+    session = get_chat_history(session_id)
+    session["job_description"] = user_input
+    session["history"].append(f"User provided Job Description: {user_input}")
+    print(f"Job Description Stored for Session {session_id}")
+
+JOB_KEYWORDS = [
+    "responsibilities", "qualifications", "we are looking for",
+    "skills required", "your tasks", "requirements", "job description"
+]
+
+def looks_like_job_description(text: str):
+    """Check for common job description phrases."""
+    text_lower = text.lower()
+    return any(keyword in text_lower for keyword in JOB_KEYWORDS)
+
+def is_url(text: str):
+    """Basic check if text is a URL."""
+    return re.match(r'^https?://', text) is not None
+
+def prompt_model_static(session_id: str, user_input: str):
+    """Handles non-streaming AI responses."""
+    print(f"Received request: session_id={session_id}, user_input={user_input}")
+
 def validate_interview_response(response: str) -> str:
     # Remove any text that appears to be a user response
     user_response_patterns = [
@@ -76,6 +101,26 @@ def store_job_description(session_id: str, user_input: str):
     except Exception as e:
         logger.error(f"Error storing job description for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to store job description")
+    if job_description is None:
+        # Check if input is URL
+        if is_url(user_input):
+            try:
+                jd = scrape_for_job_description(user_input)
+                store_job_description(session_id, jd)
+                return {"response": "Job description successfully extracted from URL. What would you like to do next?"}
+            except Exception as e:
+                print(f"Error scraping URL: {e}")
+                return {"response": "Sorry, we couldn’t extract a job description from that URL. Please try again or paste the text directly."}
+
+        # Check if input looks like a job description
+        elif looks_like_job_description(user_input):
+            store_job_description(session_id, user_input)
+            return {"response": "Thank you for providing the job description. What would you like to do next?"}
+        
+        # Fallback: treat it as job description anyway
+        else:
+            store_job_description(session_id, user_input)
+            return {"response": "Thanks! We’ve saved this as your job description. Let me know what you’d like to do next."}
 
 def build_llama3_prompt(session, user_input, ai_response=None):
     system_prompt = get_system_prompt(user_input)

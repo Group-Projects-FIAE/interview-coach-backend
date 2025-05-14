@@ -1,5 +1,4 @@
 import re
-import time
 import json
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -8,19 +7,20 @@ from selenium.webdriver.chrome.options import Options
 def scrape_for_job_description(url):
     try:
         html_content = fetch_html_with_selenium(url)
-        json_data = extract_json_ld(html_content)
-        description_to_return = ""
+        soup = BeautifulSoup(html_content, 'lxml')
+        if not check_for_valid_job_posting(soup):
+            return ([{'error': "URL is unlikely to be a job posting."}, None])
+        json_data = extract_json_ld(soup)
         # Return structured data if available
         if json_data:
             job_title = json_data.get('title')
             job_description = json_data.get('description')
         # Fallback to scraping
         else:
-            job_title, job_description = extract_job_data_from_html(html_content)
-        return job_title, job_description
+            job_title, job_description = extract_job_data_from_html(soup)
+        return [job_title, job_description]
     except Exception as e:
-        return {'error': str(e)}
-    
+        return [{'error': str(e)}, None]
 
 def fetch_html_with_selenium(url):
     options = Options()
@@ -33,16 +33,28 @@ def fetch_html_with_selenium(url):
     driver.quit()
     return html    
 
-def extract_json_ld(html):
-    soup = BeautifulSoup(html, 'lxml')
+def check_for_valid_job_posting(soup):
+    if not has_job_keywords(soup):
+        return False
+    return True
+
+def has_job_keywords(soup):
+    job_keywords = ["job", "beruf", "stelle",
+                    "company", "firma", "unternehmen",
+                    "apply now", "apply here", "bewerben", "bewerbung",
+                    "salary", "gehalt", "lohn",
+                    "job responsibilities", "requirements", "anforderungen"]
+    text = soup.get_text(separator=' ').lower()
+    return any(keyword in text for keyword in job_keywords)
+
+def extract_json_ld(soup):
     json_ld_script = soup.find('script', type='application/ld+json')
     if json_ld_script:
         data = json.loads(json_ld_script.string)
         return data
     return None
 
-def extract_job_data_from_html(html):
-    soup = BeautifulSoup(html, 'lxml')
+def extract_job_data_from_html(soup):
     job_title = ""
     job_description = ""
 
