@@ -2,6 +2,10 @@ from fastapi import Depends, HTTPException, status, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from models import TokenResponse, UserInfo
 from authentication.auth_service import AuthService
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Initialize HTTPBearer security dependency
 bearer_scheme = HTTPBearer()
@@ -41,16 +45,28 @@ class AuthController:
         Returns:
             TokenResponse: Contains the access token upon successful authentication.
         """
-        # Authenticate the user using the AuthService
-        access_token = AuthService.authenticate_user(email, password)
+        try:
+            logger.info(f"Login attempt for user: {email}")
+            # Authenticate the user using the AuthService
+            access_token = AuthService.authenticate_user(email, password)
 
-        if not access_token:
+            if not access_token:
+                logger.error(f"Login failed for user {email}: No access token returned")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid username or password",
+                )
+
+            logger.info(f"Login successful for user: {email}")
+            return TokenResponse(access_token=access_token)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during login: {str(e)}", exc_info=True)
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid username or password",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=str(e)
             )
-
-        return TokenResponse(access_token=access_token)
     
     @staticmethod
     def protected_endpoint(
@@ -68,18 +84,80 @@ class AuthController:
         Returns:
             UserInfo: Information about the authenticated user.
         """
-        # Extract the bearer token from the provided credentials
-        token = credentials.credentials
+        try:
+            logger.info("Protected endpoint accessed")
+            # Extract the bearer token from the provided credentials
+            token = credentials.credentials
 
-        # Verify the token and get user information
-        user_info = AuthService.verify_token(token)
+            # Verify the token and get user information
+            user_info = AuthService.verify_token(token)
 
-        if not user_info:
+            if not user_info:
+                logger.error("Protected endpoint: Invalid token - no user info returned")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
+            logger.info(f"Protected endpoint: Successfully verified token for user: {user_info.email}")
+            return user_info
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error in protected endpoint: {str(e)}", exc_info=True)
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token",
-                headers={"WWW-Authenticate": "Bearer"},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=str(e)
             )
+    
+    @staticmethod
+    def register(email: str, password: str, first_name: str, last_name: str) -> TokenResponse:
+        """
+        Register a new user and return access token.
 
-        return user_info
+        Args:
+            email (str): The email of the user to register.
+            password (str): The password for the new user.
+            first_name (str): The first name of the user.
+            last_name (str): The last name of the user.
+
+        Raises:
+            HTTPException: If the registration fails.
+
+        Returns:
+            TokenResponse: Contains the access token upon successful registration.
+        """
+        try:
+            logger.info(f"Registration attempt for user: {email}")
+            logger.debug(f"Registration details - First Name: {first_name}, Last Name: {last_name}")
+            
+            # Register the user using the AuthService
+            logger.info("Calling AuthService.register_user")
+            try:
+                access_token = AuthService.register_user(email, password, first_name, last_name)
+                logger.info("AuthService.register_user completed successfully")
+            except Exception as auth_error:
+                logger.error(f"AuthService.register_user failed: {str(auth_error)}", exc_info=True)
+                raise
+
+            if not access_token:
+                logger.error("Registration failed: No access token returned")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to register user",
+                )
+
+            logger.info(f"Registration successful for user: {email}")
+            return TokenResponse(access_token=access_token)
+            
+        except HTTPException as he:
+            logger.error(f"HTTP error during registration: {str(he)}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during registration: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=str(e)
+            )
     

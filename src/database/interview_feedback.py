@@ -7,22 +7,22 @@ import time
 # Configure logging
 logger = logging.getLogger(__name__)
 
-def create_extracted_notes(session_id: str, notes: str):
+def create_interview_feedback(session_id: str, feedback: str):
     connection = None
     try:
         connection = setup_maria_db.get_db_connection(db_settings.DB_NAME)
         cursor = connection.cursor()
 
-        query = """INSERT INTO ExtractedNotes (session_id, notes, created_at)
+        query = """INSERT INTO InterviewFeedback (session_id, feedback, created_at)
         VALUES (%s, %s, FROM_UNIXTIME(%s))"""
-        values = (session_id, notes, time.time())
+        values = (session_id, feedback, time.time())
         cursor.execute(query, values)
 
         connection.commit()
-        logger.debug(f"Created extracted notes for session {session_id}")
+        logger.debug(f"Created interview feedback for session {session_id}")
 
     except mariadb.Error as e:
-        logger.error(f"Error while trying to insert extracted notes: {e}")
+        logger.error(f"Error while trying to insert interview feedback: {e}")
         logger.error(f"Session ID: {session_id}")
         return None
     finally:
@@ -30,24 +30,24 @@ def create_extracted_notes(session_id: str, notes: str):
             cursor.close()
             connection.close()
 
-def get_extracted_notes(session_id: str):
+def get_interview_feedback(session_id: str):
     connection = None
     try:
         connection = setup_maria_db.get_db_connection(db_settings.DB_NAME)
         cursor = connection.cursor()
 
-        query = "SELECT notes, created_at FROM ExtractedNotes WHERE session_id = %s"
+        query = "SELECT feedback, created_at FROM InterviewFeedback WHERE session_id = %s"
         cursor.execute(query, (session_id,))
 
         result = cursor.fetchall()
-        logger.debug(f"Retrieved {len(result)} extracted notes for session {session_id}")
+        logger.debug(f"Retrieved {len(result)} feedback entries for session {session_id}")
         return result
 
     except mariadb.Error as e:
-        logger.error(f"Error while trying to retrieve extracted notes: {e}")
+        logger.error(f"Error while trying to retrieve interview feedback: {e}")
         logger.error(f"Session ID: {session_id}")
         return []
     finally:
         if connection:
             cursor.close()
-            connection.close()
+            connection.close() 

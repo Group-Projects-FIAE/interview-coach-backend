@@ -1,9 +1,10 @@
 import mariadb
-from database import setup_maria_db
+from . import setup_maria_db
+from .setup_maria_db import db_settings
 
 def create_user_preference(user_id: int, darkmode: str, language: str):
     try:
-        connection = setup_maria_db.get_db_connection(setup_maria_db.DB_NAME)
+        connection = setup_maria_db.get_db_connection(db_settings.DB_NAME)
         cursor = connection.cursor()
 
         query = """INSERT INTO UserPreferences (user_id, darkmode, language) VALUES (%s, %s, %s)"""
@@ -21,7 +22,7 @@ def create_user_preference(user_id: int, darkmode: str, language: str):
 
 def get_user_preference(user_id: str):
     try:
-        connection = setup_maria_db.get_db_connection(setup_maria_db.DB_NAME)
+        connection = setup_maria_db.get_db_connection(db_settings.DB_NAME)
         cursor = connection.cursor()
 
         query = "SELECT * FROM UserPreference WHERE user_id = %s"
