@@ -33,32 +33,19 @@ class AuthController:
     @staticmethod
     def login(email: str, password: str) -> TokenResponse:
         """
-        Authenticate user and return access token.
-
-        Args:
-            email (str): The email of the user attempting to log in.
-            password (str): The password of the user.
-
-        Raises:
-            HTTPException: If the authentication fails (wrong credentials).
-
-        Returns:
-            TokenResponse: Contains the access token upon successful authentication.
+        Authenticate user and return access and refresh tokens.
         """
         try:
             logger.info(f"Login attempt for user: {email}")
-            # Authenticate the user using the AuthService
-            access_token = AuthService.authenticate_user(email, password)
-
-            if not access_token:
+            tokens = AuthService.authenticate_user(email, password)
+            if not tokens or not tokens.get("access_token"):
                 logger.error(f"Login failed for user {email}: No access token returned")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid username or password",
                 )
-
             logger.info(f"Login successful for user: {email}")
-            return TokenResponse(access_token=access_token)
+            return TokenResponse(access_token=tokens["access_token"], refresh_token=tokens.get("refresh_token"))
         except HTTPException:
             raise
         except Exception as e:
@@ -114,48 +101,56 @@ class AuthController:
     @staticmethod
     def register(email: str, password: str, first_name: str, last_name: str) -> TokenResponse:
         """
-        Register a new user and return access token.
-
-        Args:
-            email (str): The email of the user to register.
-            password (str): The password for the new user.
-            first_name (str): The first name of the user.
-            last_name (str): The last name of the user.
-
-        Raises:
-            HTTPException: If the registration fails.
-
-        Returns:
-            TokenResponse: Contains the access token upon successful registration.
+        Register a new user and return access and refresh tokens.
         """
         try:
             logger.info(f"Registration attempt for user: {email}")
             logger.debug(f"Registration details - First Name: {first_name}, Last Name: {last_name}")
-            
-            # Register the user using the AuthService
             logger.info("Calling AuthService.register_user")
             try:
-                access_token = AuthService.register_user(email, password, first_name, last_name)
+                tokens = AuthService.register_user(email, password, first_name, last_name)
                 logger.info("AuthService.register_user completed successfully")
             except Exception as auth_error:
                 logger.error(f"AuthService.register_user failed: {str(auth_error)}", exc_info=True)
                 raise
-
-            if not access_token:
+            if not tokens or not tokens.get("access_token"):
                 logger.error("Registration failed: No access token returned")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Failed to register user",
                 )
-
             logger.info(f"Registration successful for user: {email}")
-            return TokenResponse(access_token=access_token)
-            
+            return TokenResponse(access_token=tokens["access_token"], refresh_token=tokens.get("refresh_token"))
         except HTTPException as he:
             logger.error(f"HTTP error during registration: {str(he)}")
             raise
         except Exception as e:
             logger.error(f"Unexpected error during registration: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=str(e)
+            )
+
+    @staticmethod
+    def refresh(refresh_token: str) -> TokenResponse:
+        """
+        Refresh the access token using the provided refresh token.
+        """
+        try:
+            logger.info("Refresh endpoint called")
+            tokens = AuthService.refresh_access_token(refresh_token)
+            if not tokens or not tokens.get("access_token"):
+                logger.error("Refresh failed: No access token returned")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid or expired refresh token",
+                )
+            logger.info("Token refresh successful")
+            return TokenResponse(access_token=tokens["access_token"], refresh_token=tokens.get("refresh_token"))
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during token refresh: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=str(e)

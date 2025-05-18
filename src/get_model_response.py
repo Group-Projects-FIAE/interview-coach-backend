@@ -1,3 +1,4 @@
+from database import job_description
 from scraper import scrape_for_job_description
 import setup_llama
 from fastapi import HTTPException
@@ -44,12 +45,6 @@ def get_chat_history(session_id: str):
     except Exception as e:
         logger.error(f"Error retrieving chat history for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve chat history")
-
-def store_job_description(session_id: str, user_input: str):
-    session = get_chat_history(session_id)
-    session["job_description"] = user_input
-    session["history"].append(f"User provided Job Description: {user_input}")
-    print(f"Job Description Stored for Session {session_id}")
 
 JOB_KEYWORDS = [
     "responsibilities", "qualifications", "we are looking for",

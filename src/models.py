@@ -20,6 +20,7 @@ class SignUpRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
+    refresh_token: Optional[str] = None  # refresh token for session renewal
     token_type: str = "bearer"
 
 

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Form, Depends, Request, Query, Response
+from fastapi import FastAPI, HTTPException, Form, Depends, Request, Query, Response, Cookie
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -105,7 +105,7 @@ origins = [
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["http://localhost:5173"],  # Use only the exact frontend origin
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -132,7 +132,6 @@ async def signup(request: SignUpRequest):
     try:
         logger.info("Signup request received")
         logger.info(f"Request data: {request.dict(exclude={'password'})}")
-        
         token_response = AuthController.register(
             email=request.email,
             password=request.password,
@@ -140,8 +139,19 @@ async def signup(request: SignUpRequest):
             last_name=request.last_name
         )
         logger.info("User registration successful")
-        return token_response
-            
+        response = JSONResponse(content=token_response.model_dump())
+        # Set refresh token as HTTP-only cookie
+        if token_response.refresh_token:
+            response.set_cookie(
+                key="refresh_token",
+                value=token_response.refresh_token,
+                httponly=True,
+                secure=False,  # Set to True in production with HTTPS
+                samesite="lax",
+                max_age=60*60*24*7,  # 7 days
+                path="/"
+            )
+        return response
     except HTTPException as he:
         logger.error(f"HTTP error during signup: {str(he)}")
         raise
@@ -157,16 +167,45 @@ async def login(request: LoginRequest):
     try:
         logger.info("Login request received")
         logger.info(f"Email: {request.email}")
-        
         token_response = AuthController.login(request.email, request.password)
-        return token_response
-        
+        response = JSONResponse(content=token_response.model_dump())
+        # Set refresh token as HTTP-only cookie
+        if token_response.refresh_token:
+            response.set_cookie(
+                key="refresh_token",
+                value=token_response.refresh_token,
+                httponly=True,
+                secure=False,  # Set to True in production with HTTPS
+                samesite="lax",
+                max_age=60*60*24*7,  # 7 days
+                path="/"
+            )
+        return response
     except Exception as e:
         logger.error(f"Error during login: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+
+@app.post("/auth/refresh", response_model=TokenResponse)
+async def refresh_token(refresh_token: str = Cookie(None)):
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="No refresh token provided")
+    token_response = AuthController.refresh(refresh_token)
+    response = JSONResponse(content=token_response.model_dump())
+    # Set new refresh token as HTTP-only cookie
+    if token_response.refresh_token:
+        response.set_cookie(
+            key="refresh_token",
+            value=token_response.refresh_token,
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=60*60*24*7,  # 7 days
+            path="/"
+        )
+    return response
 
 # Log available routes
 @app.on_event("startup")

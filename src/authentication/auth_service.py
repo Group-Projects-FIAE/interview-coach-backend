@@ -110,16 +110,15 @@ initialize_keycloak()
 
 class AuthService:
     @staticmethod
-    def authenticate_user(email: str, password: str) -> str:
+    def authenticate_user(email: str, password: str) -> dict:
         """
-        Authenticate the user using Keycloak and return an access token.
+        Authenticate the user using Keycloak and return access and refresh tokens.
         """
         if not keycloak_openid:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Authentication service is currently unavailable"
             )
-            
         try:
             logger.info(f"Attempting to authenticate user: {email}")
             token = keycloak_openid.token(
@@ -128,7 +127,10 @@ class AuthService:
                 password=password
             )
             logger.info("User authenticated successfully")
-            return token.get("access_token")
+            return {
+                "access_token": token.get("access_token"),
+                "refresh_token": token.get("refresh_token")
+            }
         except KeycloakAuthenticationError as e:
             logger.error(f"Authentication error: {str(e)}")
             raise HTTPException(
@@ -163,7 +165,7 @@ class AuthService:
             )
 
     @staticmethod
-    def register_user(email: str, password: str, first_name: str, last_name: str) -> str:
+    def register_user(email: str, password: str, first_name: str, last_name: str) -> dict:
         """
         Register a new user using Keycloak.
         """
@@ -243,7 +245,10 @@ class AuthService:
                         password=password
                     )
                     logger.info("Token successfully obtained for new user")
-                    return token.get("access_token")
+                    return {
+                        "access_token": token.get("access_token"),
+                        "refresh_token": token.get("refresh_token")
+                    }
                 except Exception as token_error:
                     last_error = token_error
                     logger.warning(f"Token acquisition attempt {attempt + 1} failed: {str(token_error)}")
@@ -271,4 +276,32 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Registration failed: {str(e)}"
+            )
+
+    @staticmethod
+    def refresh_access_token(refresh_token: str) -> dict:
+        """
+        Use the refresh token to obtain a new access token from Keycloak.
+        """
+        if not keycloak_openid:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication service is currently unavailable"
+            )
+        try:
+            logger.info("Attempting to refresh access token using refresh token")
+            token = keycloak_openid.token(
+                grant_type=["refresh_token"],
+                refresh_token=refresh_token
+            )
+            logger.info("Access token refreshed successfully")
+            return {
+                "access_token": token.get("access_token"),
+                "refresh_token": token.get("refresh_token")
+            }
+        except Exception as e:
+            logger.error(f"Failed to refresh access token: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired refresh token"
             )
