@@ -60,9 +60,6 @@ def is_url(text: str):
     """Basic check if text is a URL."""
     return re.match(r'^https?://', text) is not None
 
-def prompt_model_static(session_id: str, user_input: str):
-    """Handles non-streaming AI responses."""
-    print(f"Received request: session_id={session_id}, user_input={user_input}")
 
 def validate_interview_response(response: str) -> str:
     # Remove any text that appears to be a user response
@@ -133,11 +130,19 @@ def build_llama3_prompt(session, user_input, ai_response=None):
     return prompt
 
 def extract_summary_points(text):
-    # Extract bullet points from summary
+    # Try to extract code block first
     code_block = re.search(r"```[\s\S]*?```", text)
     if code_block:
-        content = code_block.group(0)
-        return content
+        return code_block.group(0)
+    # Try to extract summary after the summary phrase
+    summary_match = re.search(
+        r"This concludes our interview\. Here's a summary of your performance:(.*)", text, re.DOTALL)
+    if summary_match:
+        summary_text = summary_match.group(1).strip()
+        # If not already in a code block, wrap it
+        if not summary_text.startswith("```"):
+            summary_text = "```\n" + summary_text + "\n```"
+        return summary_text
     # fallback: try to extract lines starting with -
     lines = [line for line in text.splitlines() if line.strip().startswith("-")]
     if lines:
@@ -309,6 +314,10 @@ async def prompt_model_stream(session_id: str, user_input: str):
                 except Exception as e:
                     logger.error(f"Error during streaming: {str(e)}")
                     yield f"\n[Error: Streaming interrupted. Please try again.]"
+                
+                # Validate the full response after streaming is complete
+                full_response = validate_interview_response(full_response)
+
                 session["questions_asked"] += 1
                 if session["questions_asked"] >= max_questions:
                     session["interview_state"] = "finished"
