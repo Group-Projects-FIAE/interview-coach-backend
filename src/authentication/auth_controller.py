@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status, Form
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from models import TokenResponse, UserInfo
 from authentication.auth_service import AuthService
@@ -105,7 +105,6 @@ class AuthController:
         """
         try:
             logger.info(f"Registration attempt for user: {email}")
-            logger.debug(f"Registration details - First Name: {first_name}, Last Name: {last_name}")
             logger.info("Calling AuthService.register_user")
             try:
                 tokens = AuthService.register_user(email, password, first_name, last_name)
@@ -137,7 +136,6 @@ class AuthController:
         Refresh the access token using the provided refresh token.
         """
         try:
-            logger.info("Refresh endpoint called")
             tokens = AuthService.refresh_access_token(refresh_token)
             if not tokens or not tokens.get("access_token"):
                 logger.error("Refresh failed: No access token returned")

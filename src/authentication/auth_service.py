@@ -27,14 +27,11 @@ class CustomConnection(ConnectionManager):
 
     @token.setter
     def token(self, value):
-        logger.debug("Setting new token in CustomConnection")
         self._token = value
         if value:
             self.headers["Authorization"] = f"Bearer {value}"
-            logger.debug("Authorization header set")
         elif "Authorization" in self.headers:
             del self.headers["Authorization"]
-            logger.debug("Authorization header removed")
 
 def get_admin_token():
     """Get admin token using direct API call"""
@@ -51,7 +48,6 @@ def get_admin_token():
         logger.debug(f"Token URL: {token_url}")
         
         response = requests.post(token_url, data=data)
-        logger.debug(f"Token response status: {response.status_code}")
         
         if response.status_code != 200:
             logger.error(f"Failed to get admin token. Status: {response.status_code}, Response: {response.text}")
@@ -146,7 +142,6 @@ class AuthService:
         try:
             logger.info("Attempting to verify token")
             user_info = keycloak_openid.userinfo(token)
-            logger.debug(f"User info received: {user_info}")
             if not user_info:
                 logger.error("No user info returned")
                 raise HTTPException(
@@ -195,7 +190,6 @@ class AuthService:
                 "requiredActions": [],
                 "emailVerified": True  # Skip email verification for now
             }
-            logger.debug(f"User data to be created: {user_data}")
             
             try:
                 # Get a fresh admin token and update connection
@@ -289,7 +283,6 @@ class AuthService:
                 detail="Authentication service is currently unavailable"
             )
         try:
-            logger.info("Attempting to refresh access token using refresh token")
             token = keycloak_openid.token(
                 grant_type=["refresh_token"],
                 refresh_token=refresh_token

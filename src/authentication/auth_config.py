@@ -21,13 +21,6 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-print("Keycloak Configuration:")
-print(f"Server URL: {settings.keycloak_server_url}")
-print(f"Realm: {settings.keycloak_realm}")
-print(f"Client ID: {settings.keycloak_client_id}")
-print(f"Admin Username: {settings.keycloak_admin_username}")
-print(f"Environment file location: {os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')}")
-
 def init_keycloak(max_retries=1):
     """Initialize Keycloak with retry mechanism"""
     retry_count = 0
