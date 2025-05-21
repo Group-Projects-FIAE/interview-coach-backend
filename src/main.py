@@ -1,25 +1,21 @@
-from fastapi import FastAPI, HTTPException, Form, Depends, Request, Query, Response, Cookie
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi import FastAPI, HTTPException, Depends, Request, Query, Response, Cookie
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from keycloak.keycloak_admin import KeycloakAdmin
 from llama_cpp.server.errors import ErrorResponse
 from starlette import status
 import logging
 import sys
 import traceback
-from typing import Optional, Callable
+from typing import Callable
 from pydantic import BaseModel, Field
 import mariadb
-import uuid
 
-from database.chat_history import save_chat_message
-from database.job_description import create_job_description
-from get_model_response import prompt_model_static, prompt_model_stream
+from database.chat_history import save_chat_message, get_chat_history
+from database.job_description import create_job_description, get_job_description
+from get_model_response import prompt_model_static
 from authentication.auth_controller import AuthController
-from models import TokenResponse, UserInfo, SignUpRequest, LoginRequest
-from authentication.auth_config import settings, keycloak_openid
-from authentication.auth_service import AuthService
+from models import TokenResponse, SignUpRequest, LoginRequest
 from database.sessions import create_session
 
 # Configure logging at the start of the file
@@ -65,8 +61,7 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
         response = await call_next(request)
         
         logger.info(f"Response status: {response.status_code}")
-        logger.info(f"Response headers: {dict(response.headers)}")  # Changed to info level
-        
+
         return response
         
     except Exception as e:
@@ -94,14 +89,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": f"Internal server error: {str(exc)}"}
     )
 
-# Define CORS settings
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000"
-]
-
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
@@ -112,20 +99,6 @@ app.add_middleware(
     expose_headers=["*"],
     max_age=3600
 )
-
-# Add custom middleware for CORS debugging
-@app.middleware("http")
-async def cors_debug_middleware(request: Request, call_next):
-    logger.info(f"Request origin: {request.headers.get('origin')}")
-    logger.info(f"Request method: {request.method}")
-    logger.info(f"Request headers: {dict(request.headers)}")
-    
-    response = await call_next(request)
-    
-    logger.info(f"Response status: {response.status_code}")
-    logger.info(f"Response headers: {dict(response.headers)}")
-    
-    return response
 
 @app.post("/auth/signup", response_model=TokenResponse)
 async def signup(request: SignUpRequest):
@@ -207,37 +180,6 @@ async def refresh_token(refresh_token: str = Cookie(None)):
         )
     return response
 
-# Log available routes
-@app.on_event("startup")
-async def startup_event():
-    logger.info("=== Server Starting Up ===")
-    logger.info("CORS Configuration:")
-    # Find CORS middleware in the middleware stack
-    cors_middleware = None
-    for middleware in app.user_middleware:
-        if isinstance(middleware.cls, CORSMiddleware):
-            cors_middleware = middleware
-            break
-    
-    if cors_middleware:
-        logger.info(f"Allowed Origins: {cors_middleware.options.get('allow_origins')}")
-        logger.info(f"Allow Credentials: {cors_middleware.options.get('allow_credentials')}")
-        logger.info(f"Allowed Methods: {cors_middleware.options.get('allow_methods')}")
-        logger.info(f"Allowed Headers: {cors_middleware.options.get('allow_headers')}")
-    else:
-        logger.warning("CORS middleware not found in the stack")
-    
-    logger.info("Available Routes:")
-    for route in app.routes:
-        logger.info(f"{route.path} - {route.methods}")
-    logger.info("=== Server Started Successfully ===")
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint to verify the server is running and processing requests"""
-    logger.info("Health check endpoint called")
-    return {"status": "healthy"}
-
 class ChatRequest(BaseModel):
     sessionId: str
     userInput: str
@@ -260,8 +202,6 @@ def read_root():
 @app.post("/chat")
 async def chat(request: ChatRequest, credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     try:
-        logger.info(f"Processing chat request for session: {request.sessionId}")
-        
         if not request.userInput.strip():
             raise HTTPException(
                 status_code=400,
@@ -276,8 +216,6 @@ async def chat(request: ChatRequest, credentials: HTTPAuthorizationCredentials =
         # Save chat messages
         save_chat_message(request.sessionId, "user", request.userInput)
         save_chat_message(request.sessionId, "ai", response["response"])
-
-        logger.info(f"Chat response generated successfully for session: {request.sessionId}")
         return response
         
     except HTTPException as e:
@@ -289,18 +227,6 @@ async def chat(request: ChatRequest, credentials: HTTPAuthorizationCredentials =
             status_code=500,
             detail=f"Failed to send message: {str(e)}"
         )
-
-# Unstable
-@app.post("/chat/stream")
-async def chat_stream(request: ChatRequest, credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
-    if not request.userInput.strip():
-        raise HTTPException(status_code=400, detail="User input cannot be empty.")
-    
-    # Verify token and get user info
-    user_info = AuthController.protected_endpoint(credentials)
-    
-    return StreamingResponse(prompt_model_stream(request.sessionId, request.userInput), media_type="text/plain")
-
 
 ### Database Endpoints ###
 @app.get("/chat/history/{session_id}", responses={
@@ -401,15 +327,6 @@ async def create_new_session(session_id: str = Query(..., min_length=1, descript
             status_code=500,
             detail=f"Failed to create session: {str(e)}"
         )
-
-@app.post("/test-model/stream")
-async def test_model_stream(request: Request):
-    data = await request.json()
-    user_input = data.get("userInput", "")
-    session_id = data.get("sessionId") or str(uuid.uuid4())
-    if not user_input.strip():
-        raise HTTPException(status_code=400, detail="User input cannot be empty.")
-    return StreamingResponse(prompt_model_stream(session_id, user_input), media_type="text/plain")
 
 if __name__ == "__main__":
     import uvicorn

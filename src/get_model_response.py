@@ -11,7 +11,23 @@ import re
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+LLAMA3_SYSTEM = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{}\n<|eot_id|>"
+LLAMA3_USER = "<|start_header_id|>user<|end_header_id|>\n{}\n<|eot_id|>"
+LLAMA3_ASSISTANT = "<|start_header_id|>assistant<|end_header_id|>\n{}\n<|eot_id|>"
+
+JOB_KEYWORDS = [
+    "responsibilities", "qualifications", "we are looking for",
+    "skills required", "your tasks", "requirements", "job description"
+]
+
+USER_RESPONSE_PATTERNS = [
+    r"User:.*?(?=\n|$)", r"Candidate:.*?(?=\n|$)", r"I would.*?(?=\n|$)",
+    r"Let me.*?(?=\n|$)", r"First,.*?(?=\n|$)", r"To answer.*?(?=\n|$)",
+    r"Regarding.*?(?=\n|$)", r"As a.*?(?=\n|$)",
+]
+
 model = setup_llama.setup_model(2, 512, 2048)
+
 #store chat session using a simple in memory dictionary
 chat_sessions = defaultdict(lambda: {
     "history": [],
@@ -22,11 +38,6 @@ chat_sessions = defaultdict(lambda: {
     "max_questions": 5,  # adjust this
     "summary_points": []
 })
-
-LLAMA3_SYSTEM = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{}\n<|eot_id|>"
-LLAMA3_USER = "<|start_header_id|>user<|end_header_id|>\n{}\n<|eot_id|>"
-LLAMA3_ASSISTANT = "<|start_header_id|>assistant<|end_header_id|>\n{}\n<|eot_id|>"
-
 
 def get_chat_history(session_id: str):
     """Retrieve chat session or create a new one."""
@@ -46,11 +57,6 @@ def get_chat_history(session_id: str):
         logger.error(f"Error retrieving chat history for session {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve chat history")
 
-JOB_KEYWORDS = [
-    "responsibilities", "qualifications", "we are looking for",
-    "skills required", "your tasks", "requirements", "job description"
-]
-
 def looks_like_job_description(text: str):
     """Check for common job description phrases."""
     text_lower = text.lower()
@@ -60,20 +66,9 @@ def is_url(text: str):
     """Basic check if text is a URL."""
     return re.match(r'^https?://', text) is not None
 
-
 def validate_interview_response(response: str) -> str:
     # Remove any text that appears to be a user response
-    user_response_patterns = [
-        r"User:.*?(?=\n|$)",
-        r"Candidate:.*?(?=\n|$)",
-        r"I would.*?(?=\n|$)",
-        r"Let me.*?(?=\n|$)",
-        r"First,.*?(?=\n|$)",
-        r"To answer.*?(?=\n|$)",
-        r"Regarding.*?(?=\n|$)",
-        r"As a.*?(?=\n|$)",
-    ]
-    for pattern in user_response_patterns:
+    for pattern in USER_RESPONSE_PATTERNS:
         response = re.sub(pattern, "", response, flags=re.IGNORECASE)
     response = "\n".join(line for line in response.split("\n") if line.strip())
     return response.strip()
@@ -257,98 +252,3 @@ def prompt_model_static(session_id: str, user_input: str):
     except Exception as e:
         logger.error(f"Error in prompt_model_static: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to generate AI response")
-
-
-async def prompt_model_stream(session_id: str, user_input: str):
-    try:
-        logger.info(f"Received streaming request: session_id={session_id}, user_input={user_input}")
-        session = get_chat_history(session_id)
-        chat_history = session["history"]
-        job_description = session.get("job_description", None)
-        is_interview_mode = session.get("is_interview_mode", False)
-        interview_state = session.get("interview_state", None)
-        questions_asked = session.get("questions_asked", 0)
-        max_questions = session.get("max_questions", 3)
-        summary_points = session.get("summary_points", [])
-
-        # Handle /q quit command
-        if user_input.strip().lower() == "/q":
-            session["is_interview_mode"] = False
-            session["interview_state"] = None
-            session["questions_asked"] = 0
-            session["summary_points"] = []
-            chat_history.append(f"User: {user_input}")
-            quit_message = (
-                "You have exited all modes. Available commands:\n"
-                "/interview - Start interview simulation\n"
-                "/quiz - Start quiz mode\n"
-                "/training - Start training mode\n"
-                "/selfcheck - Self check mode\n"
-                "/help - List all commands\n\n"
-                "Please enter a command to begin."
-            )
-            chat_history.append(f"AI: {quit_message}")
-            yield quit_message
-            return
-
-        if job_description is None:
-            store_job_description(session_id, user_input)
-            yield "Thank you for providing the job description. What would you like to do next?"
-            return
-
-        if session["is_interview_mode"]:
-            if session["interview_state"] == "in_progress":
-                chat_history.append(f"User: {user_input}")
-                prompt = build_llama3_prompt(session, user_input)
-                response = model(prompt, max_tokens=200, stream=True)
-                logger.info(f"Model started streaming response for session {session_id}")
-                full_response = ""
-                try:
-                    async for chunk in response:
-                        if "choices" not in chunk or not chunk["choices"]:
-                            logger.error("Invalid chunk received from model")
-                            continue
-                        text_chunk = chunk["choices"][0]["text"]
-                        full_response += text_chunk
-                        yield text_chunk
-                except Exception as e:
-                    logger.error(f"Error during streaming: {str(e)}")
-                    yield f"\n[Error: Streaming interrupted. Please try again.]"
-                
-                # Validate the full response after streaming is complete
-                full_response = validate_interview_response(full_response)
-
-                session["questions_asked"] += 1
-                if session["questions_asked"] >= max_questions:
-                    session["interview_state"] = "finished"
-                    summary = extract_summary_points(full_response)
-                    session["summary_points"].append(summary)
-                    yield f"\n\nHere is your interview summary:\n{summary}"
-                chat_sessions[session_id]["history"].append(f"AI: {full_response}")
-                return
-            elif session["interview_state"] == "finished":
-                yield "The interview has concluded. If you want to start over, type /interview again."
-                return
-        # Not in interview mode: normal chat
-        chat_history.append(f"User: {user_input}")
-        prompt = build_llama3_prompt(session, user_input)
-        response = model(prompt, max_tokens=200, stream=True)
-        logger.info(f"Model started streaming response for session {session_id}")
-        full_response = ""
-        try:
-            async for chunk in response:
-                if "choices" not in chunk or not chunk["choices"]:
-                    logger.error("Invalid chunk received from model")
-                    continue
-                text_chunk = chunk["choices"][0]["text"]
-                full_response += text_chunk
-                yield text_chunk
-        except Exception as e:
-            logger.error(f"Error during streaming: {str(e)}")
-            yield f"\n[Error: Streaming interrupted. Please try again.]"
-        chat_sessions[session_id]["history"].append(f"AI: {full_response}")
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in prompt_model_stream: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to generate streaming response")
