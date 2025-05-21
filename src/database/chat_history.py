@@ -1,5 +1,4 @@
 import mariadb
-import sys
 import logging
 from . import setup_maria_db
 from .setup_maria_db import db_settings
@@ -18,7 +17,6 @@ def save_chat_message(session_id: str, sender: str, message: str):
         cursor.execute(query, values)
 
         connection.commit()
-        logger.debug(f"Saved chat message for session {session_id} from {sender}")
 
     except mariadb.Error as e:
         logger.error(f"Error while trying to save chat message: {e}")
@@ -44,8 +42,6 @@ def get_chat_history(session_id: str):
                 "message": message_text,
                 "timestamp": timestamp
             })
-
-        logger.debug(f"Retrieved {len(chat_history)} messages for session {session_id}")
         return chat_history
 
     except mariadb.Error as e:
@@ -68,7 +64,6 @@ def save_extracted_notes(session_id: str, note_text: str):
         cursor.execute(query, values)
 
         connection.commit()
-        logger.debug(f"Saved extracted note for session {session_id}")
 
     except mariadb.Error as e:
         logger.error(f"Error while trying to save extracted note: {e}")
@@ -93,8 +88,6 @@ def get_extracted_notes(session_id: str):
                 "note": note_text,
                 "timestamp": timestamp
             })
-
-        logger.debug(f"Retrieved {len(notes)} notes for session {session_id}")
         return notes
 
     except mariadb.Error as e:

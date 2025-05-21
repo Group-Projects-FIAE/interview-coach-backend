@@ -19,7 +19,6 @@ def create_interview_feedback(session_id: str, feedback: str):
         cursor.execute(query, values)
 
         connection.commit()
-        logger.debug(f"Created interview feedback for session {session_id}")
 
     except mariadb.Error as e:
         logger.error(f"Error while trying to insert interview feedback: {e}")
@@ -40,7 +39,6 @@ def get_interview_feedback(session_id: str):
         cursor.execute(query, (session_id,))
 
         result = cursor.fetchall()
-        logger.debug(f"Retrieved {len(result)} feedback entries for session {session_id}")
         return result
 
     except mariadb.Error as e:

@@ -19,7 +19,6 @@ def create_extracted_notes(session_id: str, notes: str):
         cursor.execute(query, values)
 
         connection.commit()
-        logger.debug(f"Created extracted notes for session {session_id}")
 
     except mariadb.Error as e:
         logger.error(f"Error while trying to insert extracted notes: {e}")
@@ -40,7 +39,6 @@ def get_extracted_notes(session_id: str):
         cursor.execute(query, (session_id,))
 
         result = cursor.fetchall()
-        logger.debug(f"Retrieved {len(result)} extracted notes for session {session_id}")
         return result
 
     except mariadb.Error as e:

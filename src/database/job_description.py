@@ -19,7 +19,6 @@ def create_job_description(session_id: str, job_title: str, job_details: str, jo
         cursor.execute(query, values)
 
         connection.commit()
-        logger.debug(f"Created job description for session {session_id}: {job_title}")
 
     except mariadb.Error as e:
         logger.error(f"Error while trying to insert new job description: {e}")
@@ -40,7 +39,6 @@ def get_job_description(session_id: str):
         cursor.execute(query, (session_id,))
 
         result = cursor.fetchall()
-        logger.debug(f"Retrieved {len(result)} job descriptions for session {session_id}")
         return result
     
     except mariadb.Error as e:

@@ -21,17 +21,9 @@ class DatabaseSettings(BaseSettings):
         env_prefix = ""
         extra = "ignore"  # This will ignore extra fields in the .env file
 
-logger.debug(f"Current working directory: {os.getcwd()}")
-logger.debug(f"Looking for .env file at: {os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')}")
-logger.debug(f"Environment variables: {os.environ.get('DB_NAME')}, {os.environ.get('DB_USER')}, {os.environ.get('DB_USER_PASSWORD')}")
-
 try:
     db_settings = DatabaseSettings()
     logger.info("Successfully loaded database settings:")
-    logger.debug(f"DB_NAME: {db_settings.DB_NAME}")
-    logger.debug(f"DB_USER: {db_settings.DB_USER}")
-    logger.debug(f"DB_HOST: {db_settings.DB_HOST}")
-    logger.debug(f"DB_PORT: {db_settings.DB_PORT}")
 except Exception as e:
     logger.error(f"Error loading database settings: {e}")
     logger.error("Please check your .env file and make sure all required variables are set")
@@ -53,7 +45,6 @@ def get_db_connection(db_name: str = None) -> mariadb.Connection:
         logger.error(f"Error connecting to MariaDB: {e}")
         logger.error(f"Connection details: host={db_settings.DB_HOST}, port={db_settings.DB_PORT}, user={db_settings.DB_USER}")
         sys.exit(1)
-
 
 # Run if you created a new mariadb container
 def create_tables():
